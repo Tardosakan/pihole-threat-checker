@@ -1,5 +1,6 @@
 from feeds import load_urlhaus
 from read_queries import get_recent_queries
+RISKY_TLDS = {"top", "xyz", "zip", "click", "loan", "work"}
 
 def is_bad(domain, bad):
 	parts = domain.split(".")
@@ -14,6 +15,8 @@ queries = get_recent_queries()
 
 for time, client, domain in queries:
 	if is_bad(domain, bad):
-		print(f"MALICIOUS: {time} {client} {domain}")
-
+		print("MALICIOUS: {time} {client} {domain}")
+	tld = domain.split(".")[-1]
+	if tld in RISKY_TLDS:
+		print("SUSPICIOUS: {time} {client} {domain}")
 print(f"Checked {len(queries)} queries")
