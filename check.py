@@ -2,6 +2,7 @@ from feeds import load_urlhaus
 from read_queries import get_recent_queries
 from collections import Counter
 from datetime import date
+from notify import send_discord
 import os
 RISKY_TLDS = {"top", "xyz", "zip", "click", "loan", "work"}
 ALLOWLIST = {"claude.ai", "anthropic.com", "ubuntu.com", "mozilla.org",
@@ -20,13 +21,17 @@ bad = load_urlhaus()
 queries = get_recent_queries()
 checkins = Counter()
 lines = []
+malicious_count = 0
+suspicious_count = 0
 
 for time, client, domain in queries:
 	if matches(domain, bad):
 		lines.append(f"MALICIOUS: {time} {client} {domain}")
+		malicious_count += 1
 	tld = domain.split(".")[-1]
 	if tld in RISKY_TLDS:
 		lines.append(f"SUSPICIOUS: {time} {client} {domain}")
+		suspicious_count += 1
 	if not matches(domain, ALLOWLIST):
 		checkins[(client, domain)] += 1
 
@@ -40,3 +45,10 @@ os.makedirs("reports", exist_ok=True)
 with open(f"reports/{today}.txt", "w") as f:
 	f.write("\n".join(lines))
 print("\n".join(lines))
+
+summary = (f"Pi-hole report {today}\n"
+           f"Malicious: {malicious_count}\n"
+           f"Suspicious: {suspicious_count}\n"
+           f"Checked {len(queries)} queries")
+if os.path.exists("discord_webhook.txt"):
+	send_discord(summary)
