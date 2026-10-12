@@ -36,5 +36,26 @@ with a comment saying why.
   because TLD abuse changes slowly and is a judgment call. Possible later: a config file.
 - **Testing with known positives:** detections were verified by temporarily adding a
   harmless domain (`google.com`) or TLD (`hu`), never by visiting real malware sites.
+- **Webhook URL is treated as a secret:** stored in `discord_webhook.txt`, listed in
+  `.gitignore` before the file was created, and set to `chmod 600` so only my user can read it.
+  The code only knows where to find the secret, never the secret itself.
+- **Discord gets a short summary, the full report stays local:** Discord messages are limited
+  to 2,000 characters, and the full report contains my browsing history.
+- **Report file is written before the Discord message is sent:** if Discord is down,
+  the report is still saved.
+- **Reports are kept out of GitHub:** `reports/` is in `.gitignore`, because the reports
+  list every domain my devices visited.
+
+## Automation
+
+Runs daily at 07:47 via cron (crontab, not part of the repo):
+
+    47 7 * * * cd /home/tardos/pihole-threat-checker && /usr/bin/python3 check.py >> reports/cron.log 2>&1
+
+- `cd` first, because the script uses relative paths (imports, `reports/`), and cron starts in the home folder
+- Full paths everywhere, because cron runs with a minimal environment
+- `>> reports/cron.log 2>&1` appends both normal output and errors to a log, since cron has no screen
+- Tested by temporarily scheduling it a few minutes ahead, checking the log, then setting it back
+- 07:47 instead of 08:00: avoids the busy top of the hour, and the report is ready in the morning
 
 ## Bugs and
